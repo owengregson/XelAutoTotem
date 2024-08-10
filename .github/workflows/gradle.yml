@@ -21,19 +21,18 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
     - name: Make Gradlew Executable
       run: chmod +x ./gradlew  # Ensure gradlew has execute permissions
-
-    - name: List Gradle Wrapper Files
-      run: ls -l gradle/wrapper/  # Diagnostic step to list files in the gradle/wrapper/ directory
-
-    - name: Disable Gradle Cache (test run)
-      run: |
-        rm -rf ~/.gradle/caches
-        rm -rf ~/.gradle/wrapper
-
-    - name: Build with Gradle Wrapper
-      run: ./gradlew build --no-daemon --refresh-dependencies
 
     - name: Extract current version from gradle.properties
       id: get_version
@@ -72,7 +71,7 @@ jobs:
 
     - name: Build with Gradle
       if: env.build_required == 'true'
-      run: ./gradlew build --no-daemon --refresh-dependencies
+      run: ./gradlew build
 
     - name: Create GitHub Release
       if: env.build_required == 'true' && github.ref == 'refs/heads/main'

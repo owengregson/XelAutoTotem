@@ -40,7 +40,6 @@ config/
 cache/
 
 # JAR files
-*.jar
 *.war
 *.ear
 
