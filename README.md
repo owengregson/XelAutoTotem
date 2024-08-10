@@ -3,10 +3,10 @@
 </p>
 <h1 align="center">XelAutoTotem</h1>
 <p>All in one "legit" automatic totem management & swapping mod for Fabric Minecraft.</p>
-<p>Download the latest version from the Releases tab, or by clicking <a href="https://github.com/owengregson/XelAutoTotem/releases/latest">here!</a></p>
-
+<br>
+<h2>Download the latest version from the Releases tab, or by clicking <a href="https://github.com/owengregson/XelAutoTotem/releases/latest">here!</a></h2>
 <h2>Requires <a href="https://modrinth.com/mod/modmenu">ModMenu</a> version 11.0.1 or later.</h2>
-
+<br>
 <p>I was inspired to create this project because most other auto-totem solutions are either very obvious, require using an entire utility client, or are outdated/buggy and do not work properly. XAT is the solution for users wanting to discreetly use auto-totem in modern Minecraft.</p>
 <p>⚠️ <strong>As always, I am not liable for any misuse of this software, such as using it to gain an unfair advantage on servers where it is not allowed. My software is provided for educational purposes only.</strong></p>
 <p>XelAutoTotem features realistic mouse movement, packet switching, and customizable randomized delays. In addition, it boasts the following features:</p>
