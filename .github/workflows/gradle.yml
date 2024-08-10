@@ -31,32 +31,37 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
+    - name: Make Gradlew Executable
+      run: chmod +x ./gradlew  # Ensure gradlew has execute permissions
+
     - name: Extract current version from gradle.properties
       id: get_version
       run: |
         version=$(grep -oP '(?<=mod_version = ).*' gradle.properties)
         echo "mod_version=$version" >> $GITHUB_ENV
 
+    - name: Get latest release tag
+      id: get_latest_release
+      run: |
+        latest_release_tag=$(git describe --tags $(git rev-list --tags --max-count=1) --abbrev=0 || echo "none")
+        echo "latest_release_tag=$latest_release_tag" >> $GITHUB_ENV
+        echo "Latest release tag: $latest_release_tag"
+
     - name: Check if version has changed
       id: version_check
       run: |
-        git fetch --tags
         current_version="${{ env.mod_version }}"
-        previous_version=$(git describe --tags --abbrev=0 || echo "none")
-        
-        if [ "$previous_version" = "none" ]; then
-          echo "No previous version found. Proceeding with build."
+        latest_release_tag="${{ env.latest_release_tag }}"
+
+        if [ "$latest_release_tag" = "none" ]; then
+          echo "No previous release found. Proceeding with build."
+          echo "build_required=true" >> $GITHUB_ENV
+        elif [ "$current_version" != "$latest_release_tag" ]; then
+          echo "Version has changed from $latest_release_tag to $current_version. Proceeding with build."
           echo "build_required=true" >> $GITHUB_ENV
         else
-          echo "Previous version: $previous_version"
-          if [ "$current_version" != "$previous_version" ]; then
-            echo "Version has changed. Proceeding with build."
-            echo "build_required=true" >> $GITHUB_ENV
-          else
-            echo "Version has not changed. Skipping build."
-            echo "build_required=false" >> $GITHUB_ENV
-          fi
-        fi
+          echo "Version has not changed. Skipping build."
+          echo "build_required=false" >> $GITHUB_ENV
 
     - name: Build with Gradle
       if: env.build_required == 'true'
