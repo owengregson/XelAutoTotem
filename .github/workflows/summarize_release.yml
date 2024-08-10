@@ -1,0 +1,51 @@
+name: Summarize and Update Release
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  summarize-and-update-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v4
+
+    - name: Generate summary for the release notes
+      id: generate_summary
+      run: |
+        # Extract the release notes text
+        release_notes=$(jq -r '.release.body' < "$GITHUB_EVENT_PATH")
+
+        # Generate the summary using Hugging Face's summarization model
+        summary=$(curl -s -X POST "https://api-inference.huggingface.co/models/facebook/bart-large-cnn" \
+          -H "Authorization: Bearer ${{ secrets.HUGGING_FACE_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"inputs\": \"$release_notes\"}" | jq -r '.[0].summary_text')
+
+        echo "summary=$summary" >> $GITHUB_ENV
+
+    - name: Generate Contributors List
+      id: generate_contributors
+      run: |
+        contributors=$(git log --pretty="%an" | sort | uniq -c | sort -rn | awk '{print NR". "$2" - "$1" commits"}')
+        echo "contributors=$contributors" >> $GITHUB_ENV
+
+    - name: Update GitHub Release with Summary
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Get the release ID from the event payload
+        release_id=$(jq -r '.release.id' < "$GITHUB_EVENT_PATH")
+
+        # Compose the updated body with Contributors, Summary, and Changelog
+        updated_body=$(printf "## Contributors:\n%s\n\n## Summary:\n%s\n\n## Changelog:\n%s" "${{ env.contributors }}" "${{ env.summary }}" "$release_notes")
+
+        # Update the release with the new content
+        curl -X PATCH \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"body\":\"$updated_body\"}" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/$release_id"
