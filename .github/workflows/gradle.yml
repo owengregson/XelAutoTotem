@@ -78,7 +78,10 @@ jobs:
           changelog=$(git log --since="${{ env.latest_release_version }}" --pretty=format:"- %h - %s")
         fi
 
-        echo "changelog=$changelog" >> $GITHUB_ENV
+        # Safely write the changelog to the environment variable
+        echo "changelog<<EOF" >> $GITHUB_ENV
+        printf '%s\n' "$changelog" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Generate Contributors List
       if: env.build_required == 'true'
