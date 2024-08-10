@@ -62,6 +62,7 @@ jobs:
         else
           echo "Version has changed from $latest_release_version to $current_version. Proceeding with build."
           echo "build_required=true" >> $GITHUB_ENV
+        fi
 
     - name: Build with Gradle
       if: env.build_required == 'true'
