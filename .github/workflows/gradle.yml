@@ -21,12 +21,6 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
 
-    - name: Make Gradlew Executable
-      run: chmod +x ./gradlew  # Ensure gradlew has execute permissions
-
-    - name: Build with Gradle Wrapper
-      run: ./gradlew build --no-daemon
-
     - name: Extract current version from gradle.properties
       id: get_version
       run: |
@@ -35,6 +29,8 @@ jobs:
 
     - name: Get date of last release
       id: get_last_release_date
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Fetch the date of the last release
         last_release_date=$(gh release view --json publishedAt -q '.publishedAt' || echo "none")
@@ -56,9 +52,12 @@ jobs:
         if [ "$last_release_date" = "none" ]; then
           echo "No previous release found. Proceeding with build."
           echo "build_required=true" >> $GITHUB_ENV
-        else
+        elif [ "$current_version" != "$last_release_date" ]; then
           echo "Version has changed from the last release. Proceeding with build."
           echo "build_required=true" >> $GITHUB_ENV
+        else
+          echo "Version has not changed. Skipping build."
+          echo "build_required=false" >> $GITHUB_ENV
         fi
 
     - name: Build with Gradle
@@ -67,6 +66,7 @@ jobs:
 
     - name: Create GitHub Release
       if: env.build_required == 'true' && github.ref == 'refs/heads/main'
+      id: create_release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -87,7 +87,7 @@ jobs:
       if: env.build_required == 'true' && github.ref == 'refs/heads/main'
       uses: actions/upload-release-asset@v1
       with:
-        upload_url: ${{ steps.get_version.outputs.upload_url }}
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./build/libs/XAT-${{ env.mod_version }}.jar  # Only the main JAR file
         asset_name: "XAT-${{ env.mod_version }}.jar"
         asset_content_type: application/java-archive
