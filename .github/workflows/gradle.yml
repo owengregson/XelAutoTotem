@@ -36,7 +36,7 @@ jobs:
       run: |
         last_release_date=$(curl -s -H "Authorization: token $GH_TOKEN" \
           https://api.github.com/repos/${{ github.repository }}/releases \
-          | jq -r 'map(select(.prerelease == false and .draft == false)) | sort_by(.created_at) | last | .created_at')
+          | jq -r 'map(select(.prerelease or .draft == false)) | sort_by(.created_at) | last | .created_at')
 
         if [ "$last_release_date" = "null" ] || [ -z "$last_release_date" ]; then
           echo "No previous release found. Including all commits."
@@ -57,7 +57,6 @@ jobs:
         else
           echo "New commits detected since last release."
           echo "build_required=true" >> $GITHUB_ENV
-        fi
 
     - name: Build with Gradle
       if: env.build_required == 'true'
@@ -72,24 +71,20 @@ jobs:
         echo "$changelog" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
-    - name: Create GitHub Release
+    - name: Create GitHub Release and Upload Assets
       if: env.build_required == 'true'
-      uses: softprops/action-gh-release@v1
+      uses: ncipollo/release-action@v1
       with:
-        tag_name: ${{ env.mod_version }}
+        tag: ${{ env.mod_version }}
         name: Release ${{ env.mod_version }}
         body: |
-          ## Changelog
+          ## Release v${{ env.mod_version }}
 
+          ### Changelog:
           ${{ env.changelog }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload Release Asset
-      if: env.build_required == 'true'
-      uses: softprops/action-upload-release-asset@v1
-      with:
-        name: "XAT-${{ env.mod_version }}.jar"
-        path: "./build/libs/XAT-${{ env.mod_version }}.jar"
+        draft: false
+        prerelease: false
+        artifacts: |
+          ./build/libs/XAT-${{ env.mod_version }}.jar
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
