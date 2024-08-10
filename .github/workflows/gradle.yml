@@ -1,5 +1,4 @@
 name: Java CI with Gradle
-# Auto Build
 
 on:
   push:
@@ -83,26 +82,21 @@ jobs:
         echo "Changelog generated:"
         echo "$changelog"
 
+        # Format the changelog with headers
+        formatted_changelog=$(printf "## Release v%s\n\n### Changelog:\n%s" "${{ env.mod_version }}" "$(echo "$changelog" | sed 's/^/- /')")
+
         tag_name=${{ env.mod_version }}
         release_name="${{ env.mod_version }}"
 
-        # Format the changelog with headers
-        formatted_changelog="## Release v${{ env.mod_version }}\n\n### Changelog:\n$(echo "$changelog" | sed 's/^/- /')"
-
-        # Create the release
-        gh release create $tag_name --title "$release_name" --notes "$formatted_changelog" --target main
-
-    - name: Get Upload URL for Release
-      if: env.build_required == 'true' && github.ref == 'refs/heads/main'
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        upload_url=$(gh release view ${{ env.mod_version }} --json uploadUrl -q .uploadUrl)
+        # Create the release and capture the upload URL
+        upload_url=$(gh release create $tag_name --title "$release_name" --notes "$formatted_changelog" --target main -q .upload_url)
         echo "upload_url=$upload_url" >> $GITHUB_ENV
 
     - name: Upload JAR to Release
       if: env.build_required == 'true' && github.ref == 'refs/heads/main'
       uses: actions/upload-release-asset@v1
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ env.upload_url }}
         asset_path: ./build/libs/XAT-${{ env.mod_version }}.jar  # Only the main JAR file
