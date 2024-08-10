@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "xat",
+  "version": "1.0",
+
+  "name": "XAT",
+  "description": "Lightweight and effiecient XCel Library for Fabric.",
+  "authors": [
+    "owengregson"
+  ],
+  "contact": {
+    "sources": "https://github.com/owengregson/XelAutoTotem",
+    "issues": "https://github.com/owengregson/XelAutoTotem/issues"
+  },
+
+  "license": "MIT License",
+  "icon": "assets/xelautototem/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "me.vexmc.xelautototem.client.XelAutoTotem"
+    ],
+    "modmenu":
+    [
+      "me.vexmc.xelautototem.config.ConfigMenu"
+    ]
+  },
+  "mixins": [
+    "autototem.mixins.json"
+  ],
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "https://discord.com/invite/jEGF5fb"
+      },
+      "update_checker": false
+    }
+  },
+
+  "depends": {
+    "fabricloader": "*",
+    "cloth-config": "*",
+    "minecraft": "*",
+    "fabric": "*"
+  }
+}

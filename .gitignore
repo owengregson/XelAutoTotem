@@ -1,0 +1,80 @@
+# Gradle files
+.gradle/
+build/
+out/
+
+# IntelliJ IDEA files
+*.iml
+.idea/
+out/
+*.ipr
+*.iws
+.gradle/
+build/
+.gradle/
+build/
+
+# VS Code files
+.vscode/
+
+# Eclipse files
+.classpath
+.project
+.settings/
+
+# Temporary files
+*.log
+*.lock
+*.tmp
+*.bak
+*.swp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Minecraft-related files
+run/
+logs/
+config/
+cache/
+
+# JAR files
+*.jar
+*.war
+*.ear
+
+# Dependency caches
+.gradle/
+build/
+out/
+
+# JetBrains Rider
+.idea/
+*.sln
+*.suo
+*.csproj
+*.csproj.user
+*.pidb
+*.unityproj
+*.vscode
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+# Miscellaneous
+*.log
+*.tmp
+*.swp
