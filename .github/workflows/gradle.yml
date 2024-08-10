@@ -27,15 +27,19 @@ jobs:
         version=$(grep -oP '(?<=mod_version = ).*' gradle.properties)
         echo "mod_version=$version" >> $GITHUB_ENV
 
-    - name: Get date of last release
+    - name: Get date of last release (including pre-releases)
       id: get_last_release_date
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        last_release_date=$(gh release view --json publishedAt -q '.publishedAt' || echo "none")
+        # Use the GitHub API to fetch the latest release, including pre-releases
+        last_release_date=$(curl -s -H "Authorization: token $GH_TOKEN" \
+          https://api.github.com/repos/${{ github.repository }}/releases \
+          | jq -r 'map(select(.prerelease or .draft == false)) | sort_by(.created_at) | last | .created_at')
 
-        if [ "$last_release_date" = "none" ]; then
+        if [ "$last_release_date" = "null" ] || [ -z "$last_release_date" ]; then
           echo "No previous release found. Including all commits."
+          last_release_date="none"
         else
           echo "Last release date: $last_release_date"
         fi
@@ -62,6 +66,7 @@ jobs:
 
     - name: Create GitHub Release
       if: env.build_required == 'true' && github.ref == 'refs/heads/main'
+      id: create_release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -69,7 +74,7 @@ jobs:
           # No previous release, so include all commits
           changelog=$(git log --pretty=format:"%h - %s")
         else
-          # Include all commits since the last release date (and include the exact timestamp)
+          # Include all commits since the last release date
           changelog=$(git log --since="${{ env.last_release_date }}" --pretty=format:"%h - %s")
         fi
 
