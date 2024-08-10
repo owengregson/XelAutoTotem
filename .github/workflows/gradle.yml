@@ -25,7 +25,7 @@ jobs:
       run: chmod +x ./gradlew  # Ensure gradlew has execute permissions
 
     - name: Build with Gradle Wrapper
-      run: ./gradlew build --no-daemon --refresh-dependencies
+      run: ./gradlew build --no-daemon
 
     - name: Extract current version from gradle.properties
       id: get_version
@@ -64,7 +64,7 @@ jobs:
 
     - name: Build with Gradle
       if: env.build_required == 'true'
-      run: ./gradlew build --no-daemon --refresh-dependencies
+      run: ./gradlew build --no-daemon
 
     - name: Create GitHub Release
       if: env.build_required == 'true' && github.ref == 'refs/heads/main'
