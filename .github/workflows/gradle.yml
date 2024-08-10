@@ -40,10 +40,15 @@ jobs:
         version=$(grep -oP '(?<=mod_version = ).*' gradle.properties)
         echo "mod_version=$version" >> $GITHUB_ENV
 
-    - name: Get latest release tag
+    - name: Get latest release tag (including pre-releases)
       id: get_latest_release
       run: |
+        # Fetch all tags, including pre-releases
+        git fetch --tags
+
+        # Get the latest tag including pre-releases
         latest_release_tag=$(git describe --tags $(git rev-list --tags --max-count=1) --abbrev=0 || echo "none")
+
         echo "latest_release_tag=$latest_release_tag" >> $GITHUB_ENV
         echo "Latest release tag: $latest_release_tag"
 
@@ -64,9 +69,15 @@ jobs:
           echo "build_required=false" >> $GITHUB_ENV
         fi
 
-    - name: Build with Gradle
-      if: env.build_required == 'true'
-      run: ./gradlew build
+    - name: Check for Gradle Wrapper and Execute Build
+      run: |
+        if [ -f "./gradlew" ]; then
+          chmod +x ./gradlew
+          ./gradlew build
+        else
+          echo "Gradle Wrapper not found, please add it to your repository."
+          exit 1
+        fi
 
     - name: Create GitHub Release
       if: env.build_required == 'true' && github.ref == 'refs/heads/main'
