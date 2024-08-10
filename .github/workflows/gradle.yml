@@ -32,7 +32,6 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Fetch the date of the last release
         last_release_date=$(gh release view --json publishedAt -q '.publishedAt' || echo "none")
 
         if [ "$last_release_date" = "none" ]; then
@@ -52,12 +51,9 @@ jobs:
         if [ "$last_release_date" = "none" ]; then
           echo "No previous release found. Proceeding with build."
           echo "build_required=true" >> $GITHUB_ENV
-        elif [ "$current_version" != "$last_release_date" ]; then
+        else
           echo "Version has changed from the last release. Proceeding with build."
           echo "build_required=true" >> $GITHUB_ENV
-        else
-          echo "Version has not changed. Skipping build."
-          echo "build_required=false" >> $GITHUB_ENV
         fi
 
     - name: Build with Gradle
@@ -66,7 +62,6 @@ jobs:
 
     - name: Create GitHub Release
       if: env.build_required == 'true' && github.ref == 'refs/heads/main'
-      id: create_release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -81,8 +76,15 @@ jobs:
         tag_name=${{ env.mod_version }}
         release_name="${{ env.mod_version }}"
 
-        # Create the release and capture the upload URL
-        upload_url=$(gh release create $tag_name --title "$release_name" --notes "$changelog" --target main --json upload_url -q .upload_url)
+        # Create the release
+        gh release create $tag_name --title "$release_name" --notes "$changelog" --target main
+
+    - name: Get Upload URL for Release
+      if: env.build_required == 'true' && github.ref == 'refs/heads/main'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        upload_url=$(gh release view ${{ env.mod_version }} --json uploadUrl -q .uploadUrl)
         echo "upload_url=$upload_url" >> $GITHUB_ENV
 
     - name: Upload JAR to Release
