@@ -36,7 +36,7 @@ jobs:
       run: |
         last_release_date=$(curl -s -H "Authorization: token $GH_TOKEN" \
           https://api.github.com/repos/${{ github.repository }}/releases \
-          | jq -r 'map(select(.prerelease == false and .draft == false)) | sort_by(.created_at) | last | .created_at')
+          | jq -r 'map(select(.draft == false)) | sort_by(.created_at) | last | .created_at')
 
         if [ "$last_release_date" = "null" ] || [ -z "$last_release_date" ]; then
           echo "No previous release found. Including all commits."
@@ -69,7 +69,12 @@ jobs:
       if: env.build_required == 'true'
       id: generate_changelog
       run: |
-        changelog=$(git log --since="${{ env.last_release_date }}" --pretty=format:"- %h - %s")
+        if [ "${{ env.last_release_date }}" = "none" ]; then
+          changelog=$(git log --pretty=format:"- %h - %s")
+        else
+          changelog=$(git log --since="${{ env.last_release_date }}" --pretty=format:"- %h - %s")
+        fi
+
         echo "changelog<<EOF" >> $GITHUB_ENV
         echo "$changelog" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
@@ -79,7 +84,7 @@ jobs:
       uses: ncipollo/release-action@v1.14.0
       with:
         tag: ${{ env.mod_version }}
-        name: Release ${{ env.mod_version }}
+        name: ${{ env.mod_version }}
         body: |
           ## Release v${{ env.mod_version }}
 
