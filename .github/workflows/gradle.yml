@@ -74,20 +74,22 @@ jobs:
           # No previous release, so include all commits
           changelog=$(git log --pretty=format:"%h - %s")
         else
-          # Include all commits since the last release date
+          # Include all commits since the last release date (and include the exact timestamp)
           changelog=$(git log --since="${{ env.last_release_date }}" --pretty=format:"%h - %s")
         fi
 
         tag_name=${{ env.mod_version }}
         release_name="${{ env.mod_version }}"
 
-        gh release create $tag_name --title "$release_name" --notes "$changelog" --target main
+        # Create the release and capture the upload URL
+        upload_url=$(gh release create $tag_name --title "$release_name" --notes "$changelog" --target main --json upload_url -q .upload_url)
+        echo "upload_url=$upload_url" >> $GITHUB_ENV
 
     - name: Upload JAR to Release
       if: env.build_required == 'true' && github.ref == 'refs/heads/main'
       uses: actions/upload-release-asset@v1
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.upload_url }}
         asset_path: ./build/libs/XAT-${{ env.mod_version }}.jar  # Only the main JAR file
         asset_name: "XAT-${{ env.mod_version }}.jar"
         asset_content_type: application/java-archive
