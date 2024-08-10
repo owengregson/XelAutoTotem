@@ -29,54 +29,66 @@ jobs:
         version=$(grep -oP '(?<=mod_version = ).*' gradle.properties)
         echo "mod_version=$version" >> $GITHUB_ENV
 
-    - name: Get date of last release (including pre-releases)
-      id: get_last_release_date
+    - name: Get latest release version (including pre-releases)
+      id: get_latest_release_version
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        last_release_date=$(curl -s -H "Authorization: token $GH_TOKEN" \
+        latest_release_version=$(curl -s -H "Authorization: token $GH_TOKEN" \
           https://api.github.com/repos/${{ github.repository }}/releases \
-          | jq -r 'map(select(.draft == false)) | sort_by(.created_at) | last | .created_at')
+          | jq -r 'map(select(.prerelease == false and .draft == false)) | sort_by(.created_at) | last | .tag_name')
 
-        if [ "$last_release_date" = "null" ] || [ -z "$last_release_date" ]; then
-          echo "No previous release found. Including all commits."
-          last_release_date="none"
+        if [ "$latest_release_version" = "null" ] || [ -z "$latest_release_version" ]; then
+          echo "No previous release found."
+          latest_release_version="none"
         else
-          echo "Last release date: $last_release_date"
+          echo "Latest release version: $latest_release_version"
         fi
 
-        echo "last_release_date=$last_release_date" >> $GITHUB_ENV
+        echo "latest_release_version=$latest_release_version" >> $GITHUB_ENV
 
     - name: Check if version has changed
       id: version_check
       run: |
         current_version="${{ env.mod_version }}"
-        last_release_date="${{ env.last_release_date }}"
+        latest_release_version="${{ env.latest_release_version }}"
 
-        if [ "$last_release_date" = "none" ]; then
+        if [ "$latest_release_version" = "none" ]; then
           echo "No previous release found. Proceeding with build."
           echo "build_required=true" >> $GITHUB_ENV
+        elif [ "$current_version" = "$latest_release_version" ]; then
+          echo "Version has not changed. Skipping build."
+          echo "build_required=false" >> $GITHUB_ENV
         else
-          echo "Version has changed from the last release. Proceeding with build."
+          echo "Version has changed from $latest_release_version to $current_version. Proceeding with build."
           echo "build_required=true" >> $GITHUB_ENV
-        fi
 
     - name: Build with Gradle
       if: env.build_required == 'true'
       run: ./gradlew build --no-daemon
 
-    - name: Generate Changelog
+    - name: Generate Changelog and Contributors List
       if: env.build_required == 'true'
-      id: generate_changelog
+      id: generate_changelog_contributors
       run: |
-        if [ "${{ env.last_release_date }}" = "none" ]; then
+        if [ "${{ env.latest_release_version }}" = "none" ]; then
           changelog=$(git log --pretty=format:"- %h - %s")
         else
-          changelog=$(git log --since="${{ env.last_release_date }}" --pretty=format:"- %h - %s")
+          last_release_date=$(curl -s -H "Authorization: token $GH_TOKEN" \
+            https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.latest_release_version }} \
+            | jq -r '.created_at')
+          changelog=$(git log --since="$last_release_date" --pretty=format:"- %h - %s")
         fi
+
+        # Generate contributors list
+        contributors=$(git shortlog -sn --since="$last_release_date" | awk '{print NR ". " $2 " (" $1 " commits)"}')
 
         echo "changelog<<EOF" >> $GITHUB_ENV
         echo "$changelog" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+        echo "contributors<<EOF" >> $GITHUB_ENV
+        echo "$contributors" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
     - name: Create GitHub Release and Upload Artifacts
@@ -87,6 +99,9 @@ jobs:
         name: ${{ env.mod_version }}
         body: |
           ## Release v${{ env.mod_version }}
+
+          ### Contributors:
+          ${{ env.contributors }}
 
           ### Changelog:
           ${{ env.changelog }}
