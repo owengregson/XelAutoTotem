@@ -36,7 +36,6 @@ Thumbs.db
 # Minecraft-related files
 run/
 logs/
-config/
 cache/
 
 # JAR files
