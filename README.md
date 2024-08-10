@@ -1,2 +1,2 @@
 # XelAutoTotem
-Auto totem lol
+All in one "legit" automatic totem management & swapping mod for Fabric Minecraft.
