@@ -1,7 +1,4 @@
-# AutoTotem
-Minecraft client-sided mod that automatically equips a totem when you use one.
+# XelAutoTotem
+All in one "legit" automatic totem management & swapping mod for Fabric Minecraft.
 
-
-
-
-© All Rights Reserved
+Download the latest vesrion from the Releases tab, or by clicking (here)[https://github.com/owengregson/XelAutoTotem/releases/latest].
