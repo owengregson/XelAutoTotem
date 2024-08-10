@@ -6,6 +6,7 @@ import net.minecraft.client.util.Window;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.screen.NamedScreenHandlerFactory;
 
 import java.awt.*;
 import java.util.Random;
@@ -21,6 +22,13 @@ public class TotemHelper {
         listeningForNextDraw = true;
         totemX = -1;
         totemY = -1;
+
+        // Open the inventory client-side
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.execute(() -> {
+            assert client.player != null;
+            client.player.openHandledScreen((NamedScreenHandlerFactory) client.player.currentScreenHandler);
+        });
     }
 
     public static boolean isListeningForTotemSlot() {
@@ -57,7 +65,7 @@ public class TotemHelper {
             // Generate a random height for the parabolic arc
             int arcHeight = random.nextInt(30) + 20;
 
-            // Calculate delays
+            // Calculate the delay per action step
             int totalDelay = getTotalDelay();
             int steps = 50;
             int delayPerStep = totalDelay / steps;
@@ -88,12 +96,15 @@ public class TotemHelper {
             // Ensure the mouse is exactly on the slot at the end
             robot.mouseMove(finalX, finalY);
 
-        } catch (AWTException e) {
+            // Small delay before clicking to ensure timing consistency
+            Thread.sleep(getTotalDelay());
+
+        } catch (AWTException | InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    private static int getTotalDelay() {
+    public static int getTotalDelay() {
         int baseDelay = ConfigManager.getConfig().delayInMilliseconds;
         if (ConfigManager.getConfig().addRandomDelay) {
             int randomDelay = random.nextInt(ConfigManager.getConfig().maxRandomDelay + 1);
